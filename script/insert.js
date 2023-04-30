@@ -1,4 +1,4 @@
-class Insert {
+export default class Insert {
     constructor() {
         this._input = 0;
     }
@@ -11,8 +11,7 @@ class Insert {
         return this._input;
     }
 
-    resetInput() {
+    reset() {
         this._input = 0;
     }
 }
-export default Insert;

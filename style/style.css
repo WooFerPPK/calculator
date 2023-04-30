@@ -1,0 +1,16 @@
+.calculator {
+    width: 175px;
+}
+.buttons{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    justify-items: start
+}
+.numbers {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.operators {
+    display:grid;
+}

@@ -1,10 +1,16 @@
-class Calculator {
+import Insert from './insert.js';
+import Display from './display.js';
+import History from './history.js';
+import Calculating from './calculating.js';
+
+export default class Calculator {
     constructor(calculatorClass) {
         this._calculatorClass = calculatorClass;
         this.insert = new Insert();
-        this.display = new Display(this.calculatorClass);
         this.history = new History();
+        this.display = new Display(this.calculatorClass, this.history);
         this.assignEventListeners(this.calculatorClass);
+        this.reset = false;
     }
 
     get calculatorClass() {
@@ -28,6 +34,8 @@ class Calculator {
             case 'operator':
                 this.operatorPressed(value);
             break;
+            default:
+                console.error(`Input error - Value: ${value}, Operator: ${operator}`);
         }
     }
 
@@ -39,123 +47,58 @@ class Calculator {
             this.insert.input = this.insert.input.substring(1, this.insert.input.length);
         }
 
+        this.display.currentInput = this.insert.input;
+        this.display.output = this.display.currentExpression;
+        this.display.showOutput();
+
         this.setOutputDisplay();
     }
 
-    operatorPressed(value) {
-        this.history.inputedNumbers = this.insert.input;
-        this.insert.resetInput();
-        this.history.inputedOperators = value;
-        
-        if (value == "equal") {
-            let calculate = new Calculating(this.history.inputedNumbers, this.history.inputedOperators);
-            this.display.output = calculate.answer;
-            this.display.showOutput();
+    operatorPressed(operator) {
+        if (operator === 'back' && this.reset === true) {
+            this.resetCalculator();
+        } else if (operator === 'back') {
+            let skipOperatorCheck = false;
+            if (this.insert.input) {
+                this.insert.input = this.insert.input.slice(0, -1);
+                skipOperatorCheck = true;
+            } 
+            if (skipOperatorCheck === false && this.history.inputedOperators.length > 0) {
+                this.history.inputedOperators.pop();
+                this.insert.input = this.history.inputedNumbers.pop();
+            }
+            this.display.currentInput = this.insert.input;
+            this.setOutputDisplay();
         } else {
+            this.history.inputedNumbers.push(this.insert.input);
+            this.history.inputedOperators.push(operator);
+            this.insert.reset();
+        }
+              
+        if (operator === "equal") {
+            let calculate = new Calculating(this.history.inputedNumbers, this.history.inputedOperators);
+            this.setOutputDisplay(`${this.display.currentExpression} = ${calculate.answer}`);
+            this.history.reset();
+            this.reset = true;
+        } else if (operator != 'back') {
+            this.display.currentInput = '';
             this.setOutputDisplay();
         }
-
     }
 
-    setOutputDisplay() {
-        this.display.output = this.insert.input;
+    resetCalculator() {
+        this.insert.reset();
+        this.history.reset();
+        this.display.reset();
+        this.reset = false;
+    }
+
+    setOutputDisplay(outputOveride) {
+        if (outputOveride) {
+            this.display.output = outputOveride
+        } else {
+            this.display.output = this.display.currentExpression;
+        }
         this.display.showOutput();
     }
 }
-
-class Calculating {
-    constructor(numbers = [], operators = []) {
-        this._answer = 0;
-
-        for (var index = 0; index < numbers.length; index++) {
-            let current = parseInt(numbers[index]);
-            switch(operators[index-1]) {
-                case 'add':
-                    this._answer += current;
-                    break;
-                case 'subtract':
-                    this._answer -= current;
-                    break;
-                case 'multiply':
-                    this._answer *= current;
-                    break;
-                default:
-                    this._answer = current;
-            }
-        }
-    }
-
-    get answer() {
-        return this._answer;
-    }
-}
-
-class Insert {
-    constructor() {
-        this._input = 0;
-    }
-
-    set input(value) {
-        this._input = value;
-    }
-
-    get input() {
-        return this._input;
-    }
-
-    resetInput() {
-        this._input = 0;
-    }
-}
-
-class Display {
-    constructor(displayClass) {
-        this._displayClass = displayClass;
-        this._output = 0;
-        this.showOutput();
-    }
-
-    get displayClass() {
-        return '.' + this._displayClass + ' .display';
-    }
-
-    set output(value) {
-        this._output = value;
-    }
-    
-    get output() {
-        return this._output;
-    }
-
-    showOutput() {
-        document.querySelectorAll(this.displayClass)[0].innerHTML = this.output;
-    }
-}
-
-class History {
-    constructor() {
-        this._inputedNumbers = [];
-        this._inputedOperators = [];
-    }
-
-    set inputedOperators(operator) {
-        this._inputedOperators.push(operator);
-    }
-
-    get inputedOperators() {
-        return this._inputedOperators;
-    }
-
-    set inputedNumbers(input) {
-        this._inputedNumbers.push(input);
-    }
-
-    get inputedNumbers() {
-        return this._inputedNumbers;
-    }
-}
-
-document.addEventListener("DOMContentLoaded", function() {
-    let calculator1 = new Calculator('calculator1');
-    let calculator2 = new Calculator('calculator2');
-});
